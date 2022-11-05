@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_auth/Screens/Home/constant.dart';
+import 'package:flutter_auth/Screens/Home/hyper_stack.dart';
 import 'package:flutter_auth/Screens/Home/model/model.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
@@ -37,13 +40,27 @@ class _MapBoxState extends State<MapBox> with TickerProviderStateMixin {
   final pageController = PageController();
   int selectedIndex = 0;
   var currentLocation = AppConstants.myLocation;
-
-  late final MapController mapController;
+  late StreamSubscription<MapEvent> subscription;
+  late MapController mapController = MapController();
 
   @override
   void initState() {
     super.initState();
-    mapController = MapController();
+    subscription = mapController.mapEventStream.listen((MapEvent mapEvent) {
+      if (mapEvent is MapEventMove) {
+        setState(() {
+          currentLocation =
+              LatLng(mapEvent.center.latitude, mapEvent.center.longitude);
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    subscription.cancel();
+    mapController.dispose();
+    super.dispose();
   }
 
   Future<LatLng> _determinePosition() async {
@@ -85,6 +102,19 @@ class _MapBoxState extends State<MapBox> with TickerProviderStateMixin {
     return LatLng(mylocation.latitude, mylocation.longitude);
   }
 
+  void onPointerDown() {
+    // isWaiting.value = true;
+  }
+
+
+
+  void onPointerUp() async {
+    // if (isLoadingPlaceDetail.value) return;
+    // await fetchPlaceDetail();
+    // isWaiting.value = false;
+    debugPrint('${mapController.center.latitude} , ${mapController.center.longitude}');
+  }
+
   @override
   Widget build(BuildContext context) {
     void _animatedMapMove(LatLng destLocation, double destZoom) {
@@ -118,19 +148,25 @@ class _MapBoxState extends State<MapBox> with TickerProviderStateMixin {
         backgroundColor: const Color.fromARGB(255, 33, 32, 32),
         title: const Text('Ship Convenient'),
       ),
-      body: Stack(
+      body: HyperStack(
         children: [
           FlutterMap(
             mapController: mapController,
             options: MapOptions(
-              interactiveFlags:
-                  InteractiveFlag.pinchZoom | InteractiveFlag.drag,
-              center: LatLng(10.841034273185302, 106.80986976566365),
-              zoom: 10.5,
-              minZoom: 5,
-              maxZoom: 18.4,
-              slideOnBoundaries: true,
-            ),
+                interactiveFlags:
+                    InteractiveFlag.pinchZoom | InteractiveFlag.drag,
+                center: currentLocation,
+                zoom: 10.5,
+                minZoom: 5,
+                maxZoom: 18.4,
+                slideOnBoundaries: true,
+                onTap: (_, coordinate) {
+                  setState(() {
+                    currentLocation =
+                      LatLng(coordinate.latitude, coordinate.longitude);
+                  });
+                  _animatedMapMove(coordinate, 15);
+                }),
             children: [
               TileLayer(
                 urlTemplate:
@@ -140,33 +176,47 @@ class _MapBoxState extends State<MapBox> with TickerProviderStateMixin {
                       "pk.eyJ1IjoiZnVsbDlzYW94ZWMiLCJhIjoiY2w5eTduMHo0MDI4eDNvcWwwbGprbG5jZCJ9.bwl8bUXXggxb-hJ1g-RItQ",
                 },
               ),
-              PolylineLayer(
-                polylineCulling: false,
-                polylines: [
-                  Polyline(
-                    points: [
-                      LatLng(10.845987, 106.814935),
-                      LatLng(10.845288, 106.815471),
-                      LatLng(10.844549, 106.814421),
-                      LatLng(10.844199, 106.814728),
-                      LatLng(10.844091, 106.814885),
-                      LatLng(10.843695, 106.814411),
-                      LatLng(10.842956, 106.815241),
-                      LatLng(10.839578, 106.812006),
-                      LatLng(10.839529, 106.811947),
-                      LatLng(10.839509, 106.811107),
-                      LatLng(10.839589, 106.810980),
-                      LatLng(10.840311, 106.810192),
-                      LatLng(10.840419, 106.810142),
-                      LatLng(10.840599, 106.810252),
-                      LatLng(10.841065, 106.809775),
-                    ],
-                    strokeWidth: 5,
-                    color: Colors.blueAccent,
-                  ),
-                ],
-              ),
+              // PolylineLayer(
+              //   polylineCulling: false,
+              //   polylines: [
+              //     Polyline(
+              //       points: [
+              //         LatLng(10.845987, 106.814935),
+              //         LatLng(10.845288, 106.815471),
+              //         LatLng(10.844549, 106.814421),
+              //         LatLng(10.844199, 106.814728),
+              //         LatLng(10.844091, 106.814885),
+              //         LatLng(10.843695, 106.814411),
+              //         LatLng(10.842956, 106.815241),
+              //         LatLng(10.839578, 106.812006),
+              //         LatLng(10.839529, 106.811947),
+              //         LatLng(10.839509, 106.811107),
+              //         LatLng(10.839589, 106.810980),
+              //         LatLng(10.840311, 106.810192),
+              //         LatLng(10.840419, 106.810142),
+              //         LatLng(10.840599, 106.810252),
+              //         LatLng(10.841065, 106.809775),
+              //       ],
+              //       strokeWidth: 5,
+              //       color: Colors.blueAccent,
+              //     ),
+              //   ],
+              // ),
               CurrentLocationLayer(),
+              Center(
+                child: Icon(Icons.location_on, color: Colors.redAccent,),
+              ),
+              Listener(
+                onPointerDown: (_) {
+                  onPointerDown();
+                },
+                onPointerUp: (_) {
+                  onPointerUp();
+                },
+                child: Container(
+                  color: Colors.white.withOpacity(0),
+                ),
+              ),
             ],
           ),
           Column(
@@ -183,29 +233,29 @@ class _MapBoxState extends State<MapBox> with TickerProviderStateMixin {
                 onPressed: () async {
                   var bounds = LatLngBounds();
                   List<LatLng> ways = [
-                      LatLng(10.845987, 106.814935),
-                      LatLng(10.845288, 106.815471),
-                      LatLng(10.844549, 106.814421),
-                      LatLng(10.844199, 106.814728),
-                      LatLng(10.844091, 106.814885),
-                      LatLng(10.843695, 106.814411),
-                      LatLng(10.842956, 106.815241),
-                      LatLng(10.839578, 106.812006),
-                      LatLng(10.839529, 106.811947),
-                      LatLng(10.839509, 106.811107),
-                      LatLng(10.839589, 106.810980),
-                      LatLng(10.840311, 106.810192),
-                      LatLng(10.840419, 106.810142),
-                      LatLng(10.840599, 106.810252),
-                      LatLng(10.841065, 106.809775),
-                    ];
-                  for(var x in ways){
+                    LatLng(10.845987, 106.814935),
+                    LatLng(10.845288, 106.815471),
+                    LatLng(10.844549, 106.814421),
+                    LatLng(10.844199, 106.814728),
+                    LatLng(10.844091, 106.814885),
+                    LatLng(10.843695, 106.814411),
+                    LatLng(10.842956, 106.815241),
+                    LatLng(10.839578, 106.812006),
+                    LatLng(10.839529, 106.811947),
+                    LatLng(10.839509, 106.811107),
+                    LatLng(10.839589, 106.810980),
+                    LatLng(10.840311, 106.810192),
+                    LatLng(10.840419, 106.810142),
+                    LatLng(10.840599, 106.810252),
+                    LatLng(10.841065, 106.809775),
+                  ];
+                  for (var x in ways) {
                     bounds.extend(x);
                   }
                   bounds.pad(15);
                   bounds.extend(LatLng(10.835596948004833, 106.8087110514264));
                   var centerZoom = mapController.centerZoomFitBounds(bounds);
-                  _animatedMapMove(centerZoom.center,centerZoom.zoom);
+                  _animatedMapMove(centerZoom.center, 15);
                 },
                 child: Icon(Icons.ac_unit_sharp),
               ),

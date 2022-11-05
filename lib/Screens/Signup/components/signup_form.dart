@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_auth/Screens/Signup/components/direction.dart';
 import 'package:flutter_auth/Screens/Signup/components/gender.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import '../../../constants.dart';
@@ -10,21 +11,22 @@ class SignUpForm extends StatefulWidget {
     Key? key,
   }) : super(key: key);
 
-  State<SignUpForm> createState(){
+  State<SignUpForm> createState() {
     return _SignUpForm();
   }
-
 }
 
 class DropdownItem extends StatefulWidget {
   const DropdownItem({Key? key, required this.callback}) : super(key: key);
   final Function callback;
+
   @override
   State<DropdownItem> createState() => _DropdownItemState();
 }
 
 class _DropdownItemState extends State<DropdownItem> {
   String selectedValue = "Male";
+
   @override
   Widget build(BuildContext context) {
     return DropdownButton(
@@ -33,7 +35,7 @@ class _DropdownItemState extends State<DropdownItem> {
       onChanged: (String? value) {
         setState(() {
           selectedValue = value!;
-          widget.callback(value!);
+          widget.callback(value);
         });
       },
       items: dropdownItems,
@@ -42,11 +44,11 @@ class _DropdownItemState extends State<DropdownItem> {
 }
 
 class _SignUpForm extends State<SignUpForm> {
-
   String _username = "";
   String _password = "";
   String _email = "";
   String _displayname = "";
+
   //String _firstname = "";
   //String _lastname = "";
   String _gender = "";
@@ -57,6 +59,7 @@ class _SignUpForm extends State<SignUpForm> {
   final _passwordEditingController = TextEditingController();
   final _emailEditingController = TextEditingController();
   final _displaynameEditingController = TextEditingController();
+
   //final _firstnameEditingController = TextEditingController();
   //final _lastnameEditingController = TextEditingController();
   final _genderEditingController = TextEditingController();
@@ -64,18 +67,21 @@ class _SignUpForm extends State<SignUpForm> {
   final _imageEditingController = TextEditingController();
   final _addressEditingController = TextEditingController();
 
-
   Future<String?> postHttp(
-      String username, String pass,
-      String email, String displayname,
-      String phone, String image,
-      String address, String gender) async {
+      @required String username,
+      @required String pass,
+      @required String email,
+      @required String displayname,
+      @required String phone,
+      @required String image,
+      @required String address,
+      @required String gender) async {
     try {
       var response = await Dio().post(
           'https://convenient-way.azurewebsites.net/api/v1.0/shippers/register',
           data: {
-            'userName' : username,
-            'password' : pass,
+            'userName': username,
+            'password': pass,
             "email": email,
             "displayName": displayname,
             "phoneNumber": phone,
@@ -83,15 +89,16 @@ class _SignUpForm extends State<SignUpForm> {
             "address": address,
             "gender": gender,
           });
-      return response.data['data']['success'];
+      return response.data['success'];
     } catch (e) {
       print(e);
     }
   }
 
-  void setGender(String value){
+  void setGender(String value) {
     _gender = value;
   }
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -113,7 +120,7 @@ class _SignUpForm extends State<SignUpForm> {
             height: 50,
             child: TextFormField(
               controller: _usernameEditingController,
-              onChanged: (text){
+              onChanged: (text) {
                 this._username = text;
               },
               textInputAction: TextInputAction.next,
@@ -121,7 +128,7 @@ class _SignUpForm extends State<SignUpForm> {
               decoration: InputDecoration(
                 labelText: "Tài khoản",
                 prefixIcon: Icon(Icons.person),
-              //  ),
+                //  ),
               ),
             ),
           ),
@@ -132,7 +139,7 @@ class _SignUpForm extends State<SignUpForm> {
             height: 50,
             child: TextFormField(
               controller: _passwordEditingController,
-              onChanged: (text){
+              onChanged: (text) {
                 this._password = text;
               },
               cursorColor: kPrimaryColor,
@@ -150,7 +157,7 @@ class _SignUpForm extends State<SignUpForm> {
             height: 50,
             child: TextFormField(
               controller: _emailEditingController,
-              onChanged: (text){
+              onChanged: (text) {
                 this._email = text;
               },
               cursorColor: kPrimaryColor,
@@ -168,7 +175,7 @@ class _SignUpForm extends State<SignUpForm> {
             height: 50,
             child: TextFormField(
               controller: _displaynameEditingController,
-              onChanged: (text){
+              onChanged: (text) {
                 this._displayname = text;
               },
               cursorColor: kPrimaryColor,
@@ -240,7 +247,7 @@ class _SignUpForm extends State<SignUpForm> {
             height: 50,
             child: TextFormField(
               controller: _phoneEditingController,
-              onChanged: (text){
+              onChanged: (text) {
                 this._phone = text;
               },
               cursorColor: kPrimaryColor,
@@ -258,7 +265,7 @@ class _SignUpForm extends State<SignUpForm> {
             height: 50,
             child: TextFormField(
               controller: _imageEditingController,
-              onChanged: (text){
+              onChanged: (text) {
                 this._image = text;
               },
               cursorColor: kPrimaryColor,
@@ -276,7 +283,7 @@ class _SignUpForm extends State<SignUpForm> {
             height: 50,
             child: TextFormField(
               controller: _addressEditingController,
-              onChanged: (text){
+              onChanged: (text) {
                 this._address = text;
               },
               cursorColor: kPrimaryColor,
@@ -303,38 +310,48 @@ class _SignUpForm extends State<SignUpForm> {
             ),
             Padding(
               padding: const EdgeInsets.only(left: 20),
-              child: DropdownItem(callback: setGender,),
+              child: DropdownItem(
+                callback: setGender,
+              ),
             ),
           ],
         ),
         const SizedBox(height: defaultPadding / 2),
         ElevatedButton(
-          onPressed: () async{
-            print(_gender);
-            if((await postHttp(
-              _username,
-              _password,
-              _email,
-              _displayname,
-              _phone,
-              _image,
-              _address,
-              _gender,
-            )) == false) {
+          onPressed: () async {
+            if ((await postHttp(
+                  _username,
+                  _password,
+                  _email,
+                  _displayname,
+                  _phone,
+                  _image,
+                  _address,
+                  _gender,
+                )) ==
+                false) {
               Fluttertoast.showToast(
-                  msg: "Đăng ký không thành công!\nVui lòng nhập đầu đủ thông tin!",
+                  msg:
+                      "Đăng ký không thành công!\nVui lòng nhập đầu đủ thông tin!",
                   toastLength: Toast.LENGTH_SHORT,
                   gravity: ToastGravity.CENTER,
                   backgroundColor: Colors.red,
                   textColor: Colors.white,
-                  fontSize: 16.0
-              );
+                  fontSize: 16.0);
             } else {
+              // Fluttertoast.showToast(
+              //     msg: "Đăng ký thành công!",
+              //     toastLength: Toast.LENGTH_SHORT,
+              //     gravity: ToastGravity.CENTER,
+              //     backgroundColor: Colors.red,
+              //     textColor: Colors.white,
+              //     fontSize: 16.0
+              // );
               Navigator.push(
                 context,
                 MaterialPageRoute(
                   builder: (context) {
-                    return LoginScreen();
+                    return Dashboard();
                   },
                 ),
               );
